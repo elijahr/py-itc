@@ -586,7 +586,7 @@ def test_be_and_bd():
             n >>= 1
             b += 1
         return b
-    k = [int(65536*random.random()) for i in xrange(10000)]
+    k = [int(65536*random.random()) for i in range(10000)]
     be = BinEncode()
     bcnts = []
     for x in k:
@@ -595,20 +595,20 @@ def test_be_and_bd():
         bcnts.append(bits)
         be.add_ints(x, bits)
     bstr = be.as_bits()
-    print len(bstr)
+    print(len(bstr))
     bd = BinDecode(bstr)
     ans = []
     for b in bcnts:
         a = bd.decode(b)
         ans.append(a)
-    print k == ans
+    print(k == ans)
 
 def test_stamp_stuff():
     s = Stamp()
     l, r = s.fork()
     r.event()
-    print r
-    print Stamp.load(r.encode())
+    print(r)
+    print(Stamp.load(r.encode()))
 
 if __name__ == '__main__':
     test_be_and_bd()
