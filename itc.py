@@ -2,6 +2,7 @@
 
 __version__ = '0.3.2'
 
+
 # I am copying this more or less verbatim from a C# library I in
 # turn copied from a Java library I found on github.  I'm also
 # basically doing this in the background while I watch Archer.  So,
@@ -9,6 +10,7 @@ __version__ = '0.3.2'
 
 # This code is in the public domain, although I'd appreciate it if
 # you let me know if you use it.
+
 
 class IDNode(object):
     def __init__(self, val=None):
@@ -18,12 +20,12 @@ class IDNode(object):
         self.leaf = val is not None
 
     def __repr__(self):
-        return "ID: %s"%self.enstring()
+        return "ID: %s" % self.enstring()
 
     def enstring(self):
         if self.leaf:
             return str(self.value)
-        return "(%s, %s)"%(self.left.enstring(), self.right.enstring())
+        return "(%s, %s)" % (self.left.enstring(), self.right.enstring())
 
     def clone(self):
         rtn = IDNode(self.value)
@@ -47,17 +49,17 @@ class IDNode(object):
         id1 = IDNode()
         id2 = IDNode()
 
-        if self.leaf and self.value == 0: # s(0) -> (0, 0)
+        if self.leaf and self.value == 0:  # s(0) -> (0, 0)
             # this isn't supposed to happen
             id1.leaf = True
             id1.value = 0
 
             id2.leaf = True
             id2.value = 0
-        elif self.leaf and self.value == 1: # s(1) -> [(1, 0), (0, 1)]
+        elif self.leaf and self.value == 1:  # s(1) -> [(1, 0), (0, 1)]
             id1.left = IDNode(1)
             id1.right = IDNode(0)
-            
+
             id2.left = IDNode(0)
             id2.right = IDNode(1)
         elif not self.leaf and self.left.leaf and self.left.value == 0 and \
@@ -106,7 +108,7 @@ class IDNode(object):
             self.value = 1
             self.left = self.right = None
 
-    def __add__(self, other): # aka join
+    def __add__(self, other):  # aka join
         if self.leaf and self.value == 0:
             return other.clone()
         elif other.leaf and other.value == 0:
@@ -122,11 +124,11 @@ class IDNode(object):
             be.add_ints(0, 2)
             be.add_ints(self.value, 1)
         elif not self.leaf and self.left.leaf and self.left.value == 0 and \
-            (not self.right.leaf or self.right.value == 1):
+                (not self.right.leaf or self.right.value == 1):
             be.add_ints(1, 2)
             self.right.encode(be)
         elif not self.leaf and self.right.leaf and self.right.value == 0 and \
-            (not self.left.leaf or self.left.value == 1):
+                (not self.left.leaf or self.left.value == 1):
             be.add_ints(2, 2)
             self.left.encode(be)
         else:
@@ -151,6 +153,7 @@ class IDNode(object):
             root.right = IDNode.load(bd)
         return root
 
+
 class EventNode(object):
     def __init__(self, val=0):
         self.value = val
@@ -171,12 +174,12 @@ class EventNode(object):
     leaf = property(get_leaf, set_leaf)
 
     def __repr__(self):
-        return "EN: %s"%self.enstring()
+        return "EN: %s" % self.enstring()
 
     def enstring(self):
         if self.leaf:
             return str(self.value)
-        return "(%s, %s, %s)"%(self.value, self.left.enstring(), self.right.enstring())
+        return "(%s, %s, %s)" % (self.value, self.left.enstring(), self.right.enstring())
 
     def clone(self):
         rtn = EventNode()
@@ -188,24 +191,24 @@ class EventNode(object):
         return rtn
 
     def __add__(self, n):
-        '''
+        """
         Known as "Lift" (static method) in the Java ITC implementation
-        '''
+        """
         rtn = self.clone()
         rtn.value += n
         return rtn
 
     def __iadd__(self, n):
-        '''
+        """
         Known as "Lift" in the Java ITC implementation
-        '''
+        """
         self.value += n
         return self
 
     def __isub__(self, n):
-        '''
+        """
         aka "Sink"
-        '''
+        """
         self.value -= n
         return self
 
@@ -215,9 +218,9 @@ class EventNode(object):
         return rtn
 
     def __mul__(self, other):
-        '''
+        """
         Join.  Probably this should be __mul__ for both ID and Event nodes, for consistency.
-        '''
+        """
         rtn = self.clone()
         if not self.leaf and not other.leaf:
             if self.value > other.value:
@@ -293,9 +296,9 @@ class EventNode(object):
         return False
 
     def height(self):
-        '''
+        """
         Is destructive
-        '''
+        """
         if not self.leaf:
             self.left.height()
             self.right.height()
@@ -303,48 +306,48 @@ class EventNode(object):
             self.leaf = True
 
     def __eq__(self, other):
-        if not other: # probably don't need this check but ok
+        if not other:  # probably don't need this check but ok
             return False
         if self.leaf and other.leaf and self.value == other.value:
             return True
         if not self.leaf and not other.leaf and \
-            self.value == other.value and self.left == other.left and \
-            self.right == other.right:
+                self.value == other.value and self.left == other.left and \
+                self.right == other.right:
             return True
         return False
 
     def encode(self, be):
         if self.leaf:
-            be.add_ints(1, 1) # dt
+            be.add_ints(1, 1)  # dt
             be.add_number(self.value, 2)
             return
 
-        be.add_ints(0, 1) # dt
+        be.add_ints(0, 1)  # dt
         if self.value == 0 and self.left.leaf and self.left.value == 0 and \
-            (not self.right.leaf or self.right.value > 0):
-            be.add_ints(0, 2) # flag
+                (not self.right.leaf or self.right.value > 0):
+            be.add_ints(0, 2)  # flag
             self.right.encode(be)
         elif self.value == 0 and self.right.leaf and self.right.value == 0 and \
-            (not self.left.leaf or self.left.value > 0):
-            be.add_ints(1, 2) # flag
+                (not self.left.leaf or self.left.value > 0):
+            be.add_ints(1, 2)  # flag
             self.left.encode(be)
         elif self.value > 0 and self.left.leaf and self.left.value == 0 and \
-            (not self.right.leaf or self.right.value > 0):
-            be.add_ints(3, 2) # flag
-            be.add_ints(0, 1) # vflag
-            be.add_ints(0, 1) # cflag
+                (not self.right.leaf or self.right.value > 0):
+            be.add_ints(3, 2)  # flag
+            be.add_ints(0, 1)  # vflag
+            be.add_ints(0, 1)  # cflag
             be.add_number(self.value, 2)
             self.right.encode(be)
         elif self.value > 0 and self.right.leaf and self.right.value == 0 and \
-            (not self.left.leaf or self.left.value > 0):
-            be.add_ints(3, 2) # flag
-            be.add_ints(0, 1) # vflag
-            be.add_ints(1, 1) # cflag
+                (not self.left.leaf or self.left.value > 0):
+            be.add_ints(3, 2)  # flag
+            be.add_ints(0, 1)  # vflag
+            be.add_ints(1, 1)  # cflag
             be.add_number(self.value, 2)
             self.left.encode(be)
         else:
-            be.add_ints(3, 2) # flag
-            be.add_ints(1, 1) # vflag
+            be.add_ints(3, 2)  # flag
+            be.add_ints(1, 1)  # vflag
             be.add_number(self.value, 2)
             self.left.encode(be)
             self.right.encode(be)
@@ -385,6 +388,7 @@ class EventNode(object):
                 root.right = EventNode.load(bd)
         return root
 
+
 class Stamp(object):
     def __init__(self, idn=None, evn=None):
         if idn:
@@ -398,8 +402,8 @@ class Stamp(object):
 
     def fork(self):
         lid, rid = self.idn.split()
-        l = Stamp(lid, self.evn.clone())
-        r = Stamp(rid, self.evn.clone())
+        l = self.__class__(lid, self.evn.clone())
+        r = self.__class__(rid, self.evn.clone())
         return l, r
 
     def __cmp__(self, other):
@@ -408,7 +412,7 @@ class Stamp(object):
     def __add__(self, other):
         idn = self.idn + other.idn
         evn = self.evn * other.evn
-        return Stamp(idn, evn)
+        return self.__class__(idn, evn)
 
     def __le__(self, other):
         return self.evn <= other.evn
@@ -416,7 +420,7 @@ class Stamp(object):
     def peek(self):
         idn = IDNode(0)
         evn = self.evn.clone()
-        return Stamp(idn, evn)
+        return self.__class__(idn, evn)
 
     def event(self):
         old = self.evn.clone()
@@ -425,10 +429,10 @@ class Stamp(object):
             self.grow()
 
     def fold(self, other):
-        '''
+        """
 	    Joins two stamps, and then immediately forks them and returns
     	only the one with the same ID as this stamp.
-        '''
+        """
         j = self + other
         a, b = j.fork()
         if a.idn == self.idn:
@@ -438,26 +442,26 @@ class Stamp(object):
         # yikes
 
     def grow(self):
-        '''
+        """
         This gets kind of weird.
-        '''
+        """
         if self.idn.leaf and self.idn.value == 1 and self.evn.leaf:
             self.evn += 1
             return 0
         elif self.evn.leaf:
             self.evn.leaf = False
-	        # here 1000 is "some large constant" that needs to be
+            # here 1000 is "some large constant" that needs to be
             # larger than the tree height of e
             return self.grow() + 1000
         elif not self.idn.leaf and self.idn.left.leaf and self.idn.left.value == 0:
-            return Stamp(self.idn.right, self.evn.right).grow() + 1
+            return self.__class__(self.idn.right, self.evn.right).grow() + 1
         elif not self.idn.leaf and self.idn.right.leaf and self.idn.right.value == 0:
-            return Stamp(self.idn.left, self.evn.left).grow() + 1
+            return self.__class__(self.idn.left, self.evn.left).grow() + 1
         elif not self.idn.leaf:
             e1 = self.evn.left.clone()
             e2 = self.evn.right.clone()
-            costl = Stamp(self.idn.left, self.evn.left).grow()
-            costr = Stamp(self.idn.right, self.evn.right).grow()
+            costl = self.__class__(self.idn.left, self.evn.left).grow()
+            costr = self.__class__(self.idn.right, self.evn.right).grow()
             if costl < costr:
                 self.evn.right = e2
                 return costl + 1
@@ -474,18 +478,18 @@ class Stamp(object):
         elif self.evn.leaf:
             pass
         elif not self.idn.leaf and self.idn.left.leaf and self.idn.left.value == 1:
-            Stamp(self.idn.right, self.evn.right).fill()
+            self.__class__(self.idn.right, self.evn.right).fill()
             self.evn.left.height()
             self.evn.left.value = max(self.evn.left.value, self.evn.right.value)
             self.evn.normalize()
         elif not self.idn.leaf and self.idn.right.leaf and self.idn.right.value == 1:
-            Stamp(self.idn.left, self.evn.left).fill()
+            self.__class__(self.idn.left, self.evn.left).fill()
             self.evn.right.height()
             self.evn.right.value = max(self.evn.right.value, self.evn.left.value)
             self.evn.normalize()
         elif not self.idn.leaf:
-            Stamp(self.idn.left, self.evn.left).fill()
-            Stamp(self.idn.right, self.evn.right).fill()
+            self.__class__(self.idn.left, self.evn.left).fill()
+            self.__class__(self.idn.right, self.evn.right).fill()
             self.evn.normalize()
         return self
 
@@ -494,17 +498,19 @@ class Stamp(object):
         self.idn.encode(be)
         self.evn.encode(be)
         return be.as_bits()
+
     dump = encode
 
-    @staticmethod
-    def load(bstr):
+    @classmethod
+    def load(cls, bstr):
         bd = BinDecode(bstr)
         idn = IDNode.load(bd)
         evn = EventNode.load(bd)
-        return Stamp(idn, evn)
+        return cls(idn, evn)
 
     def __repr__(self):
-        return "<%s; %s>"%(self.idn.enstring(), self.evn.enstring())
+        return "<%s; %s>" % (self.idn.enstring(), self.evn.enstring())
+
 
 class BinEncode(object):
     def __init__(self):
@@ -512,9 +518,9 @@ class BinEncode(object):
         self.pitbears = "whoa scary"
 
     def add_ints(self, n, b):
-        '''
+        """
         Encode the number n in b bits.
-        '''
+        """
         while b > 8:
             tn = (n & (0xff << (b - 8))) >> (b - 8)
             self.bitpairs.append((tn, 8))
@@ -552,6 +558,7 @@ class BinEncode(object):
         bstream.append(pack)
         return b"".join([chr(x) for x in bstream])
 
+
 class BinDecode(object):
     def __init__(self, bs):
         self.bits = bs
@@ -578,6 +585,7 @@ class BinDecode(object):
             return 2 ** base - 4 + self.decode(base)
         return self.decode_number(base + 1)
 
+
 def test_be_and_bd():
     import random
     def bits_to_store(n):
@@ -586,7 +594,8 @@ def test_be_and_bd():
             n >>= 1
             b += 1
         return b
-    k = [int(65536*random.random()) for i in range(10000)]
+
+    k = [int(65536 * random.random()) for i in range(10000)]
     be = BinEncode()
     bcnts = []
     for x in k:
@@ -603,12 +612,14 @@ def test_be_and_bd():
         ans.append(a)
     print(k == ans)
 
+
 def test_stamp_stuff():
     s = Stamp()
     l, r = s.fork()
     r.event()
     print(r)
     print(Stamp.load(r.encode()))
+
 
 if __name__ == '__main__':
     test_be_and_bd()
